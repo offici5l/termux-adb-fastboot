@@ -12,8 +12,5 @@
 
 3. From Termux command line:
 ```bash
-termux-setup-storage
-```
-```bash
 curl https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/install | bash
 ```
