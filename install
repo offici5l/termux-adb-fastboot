@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+yes | pkg uninstall termux-adb 2>/dev/null >/dev/null
+
 printf "\n\e[1;32mapt-get update&upgrade ...\e[0m\n\n"
 yes | apt-get update && yes | apt-get upgrade 
 
