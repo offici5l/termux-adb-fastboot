@@ -1,6 +1,7 @@
 ### Run adb and fastboot in Termux without root permissions!
 
-by @offici5l (atest)
+Android Debug Bridge version 1.0.41
+Version 35.0.1-android-tools
 
 ### Installation
 
