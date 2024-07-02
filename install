@@ -1,33 +1,67 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/bin/bash
 
-printf "\n\e[1;32mapt-get update&upgrade ...\e[0m\n\n"
-yes | apt-get update && yes | apt-get upgrade 
+installAndroidTools() {
+    yes | pkg install android-tools
+}
 
-packages="coreutils gnupg wget"
-for package in $packages; do
-    if ! dpkg -s $package >/dev/null 2>&1; then
-        printf "\n\e[1;32m $package is now being installed...\e[0m\n\n"
-        yes | apt-get install $package
+installTermuxApi() {
+    yes | pkg install termux-api
+}
+
+checkAndInstallPackages() {
+    androidToolsInstalled=1
+    termuxApiInstalled=1
+
+    if ! pkg files android-tools > /dev/null 2>&1; then
+        installAndroidTools
+        androidToolsInstalled=0
+    fi
+
+    if ! pkg files termux-api > /dev/null 2>&1; then
+        installTermuxApi
+        termuxApiInstalled=0
+    fi
+
+    if [ $androidToolsInstalled -eq 1 ] && [ $termuxApiInstalled -eq 1 ]; then
+        return 0 
+    else
+        return 1
+    fi
+}
+
+while true; do
+    checkAndInstallPackages
+    if [ $? -eq 0 ]; then
+        break 
     fi
 done
 
-install_adb() {
-    yes | apt install termux-adb
-    ln -sf $PREFIX/bin/termux-fastboot $PREFIX/bin/fastboot && ln -sf $PREFIX/bin/termux-adb $PREFIX/bin/adb
-    printf "\n\e[1;34mSymbolic links created:\e[0m\n  - 'termux-fastboot' -> 'fastboot'\n  - 'termux-adb' -> 'adb'\n"
-}
+while true; do
+    if [ -f "$PREFIX/bin/adb" ] && [ -f "$PREFIX/bin/fastboot" ]; then
+        mv "$PREFIX/bin/adb" "$PREFIX/bin/-adb" &&
+        mv "$PREFIX/bin/fastboot" "$PREFIX/bin/-fastboot" &&
+        break 
+    fi
+    yes | pkg reinstall android-tools
+done
 
-if [ ! -f "$PREFIX/etc/apt/sources.list.d/termux-adb.list" ]; then
-  mkdir -p $PREFIX/etc/apt/sources.list.d
-  echo -e "deb https://nohajc.github.io termux extras" > $PREFIX/etc/apt/sources.list.d/termux-adb.list
-  wget -qP $PREFIX/etc/apt/trusted.gpg.d https://nohajc.github.io/nohajc.gpg
-  yes | apt update
-  printf "\n\e[1;32mapt update ...\e[0m\n\n"
-  install_adb
-  printf "\n\e[1;32m termux-adb is now being installed...\e[0m\n\n"
-else
-  printf "\n\e[1;32mRepo already installed.\n\n termux-adb is now being updated ...\e[0m\n"
-  install_adb
-fi
+while true; do
+    curl -s "https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/atest/adb" -o "$PREFIX/bin/adb"
+    if [ $? -eq 0 ]; then
+        break
+    fi
+done
 
-printf "\n\e[1;32mdone!\n\nadb\e[0m and \e[1;32mfastboot\e[0m ready to use.\n\n"
+while true; do
+    curl -s "https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/atest/fastboot" -o "$PREFIX/bin/fastboot"
+    if [ $? -eq 0 ]; then
+        break
+    fi
+done
+
+chmod +x "$PREFIX/bin/adb"
+chmod +x "$PREFIX/bin/fastboot"
+
+printf "\n\e[1;32m\nadb\e[0m and \e[1;32mfastboot\e[0m ready to use.\n\n"
+
+exit 0
