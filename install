@@ -1,33 +1,15 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 printf "\n\e[1;32mapt-get update&upgrade ...\e[0m\n\n"
-yes | apt-get update && yes | apt-get upgrade 
+yes | apt-get update && yes | apt-get upgrade && yes | apt-get install wget && yes | apt-get install gnupg && yes | apt-get install coreutils
 
-packages="coreutils gnupg wget"
-for package in $packages; do
-    if ! dpkg -s $package >/dev/null 2>&1; then
-        printf "\n\e[1;32m $package is now being installed...\e[0m\n\n"
-        yes | apt-get install $package
-    fi
-done
-
-install_adb() {
-    yes | apt install termux-adb
-    ln -sf $PREFIX/bin/termux-fastboot $PREFIX/bin/fastboot && ln -sf $PREFIX/bin/termux-adb $PREFIX/bin/adb
-    printf "\n\e[1;34mSymbolic links created:\e[0m\n  - 'termux-fastboot' -> 'fastboot'\n  - 'termux-adb' -> 'adb'\n"
-}
-
-if [ ! -f "$PREFIX/etc/apt/sources.list.d/termux-adb.list" ]; then
-  mkdir -p $PREFIX/etc/apt/sources.list.d
-  echo -e "deb https://nohajc.github.io termux extras" > $PREFIX/etc/apt/sources.list.d/termux-adb.list
-  wget -qO $PREFIX/etc/apt/trusted.gpg.d/nohajc.gpg https://nohajc.github.io/nohajc.gpg
-  yes | apt update
-  printf "\n\e[1;32mapt update ...\e[0m\n\n"
-  install_adb
-  printf "\n\e[1;32m termux-adb is now being installed...\e[0m\n\n"
-else
-  printf "\n\e[1;32mRepo already installed.\n\n termux-adb is now being updated ...\e[0m\n"
-  install_adb
-fi
+mkdir -p $PREFIX/etc/apt/sources.list.d
+echo -e "deb https://nohajc.github.io termux extras" > $PREFIX/etc/apt/sources.list.d/termux-adb.list
+wget -qO $PREFIX/etc/apt/trusted.gpg.d/nohajc.gpg https://nohajc.github.io/nohajc.gpg
+yes | apt update
+printf "\n\e[1;32m termux-adb is now being installed...\e[0m\n\n"
+yes | apt install termux-adb
+ln -sf $PREFIX/bin/termux-fastboot $PREFIX/bin/fastboot && ln -sf $PREFIX/bin/termux-adb $PREFIX/bin/adb
+printf "\n\e[1;34mSymbolic links created:\e[0m\n  - 'termux-fastboot' -> 'fastboot'\n  - 'termux-adb' -> 'adb'\n"
 
 printf "\n\e[1;32mdone!\n\nadb\e[0m and \e[1;32mfastboot\e[0m ready to use.\n\n"
