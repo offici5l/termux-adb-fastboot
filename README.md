@@ -12,5 +12,9 @@
 
 3. From Termux command line:
 ```bash
-curl https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/install | bash
+curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/install | bash
+```
+Or
+```bash
+curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/test/utermuxadb | bash
 ```
