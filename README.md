@@ -16,5 +16,5 @@ curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/inst
 ```
 Or
 ```bash
-curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/test/utermuxadb | bash
+curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/utermuxadb | bash
 ```
