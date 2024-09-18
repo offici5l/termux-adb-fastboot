@@ -1,0 +1,99 @@
+#!/bin/bash
+
+script="$PREFIX/bin/utermuxadb"
+
+if [ ! -f "$script" ]; then
+    echo -e "\nDownload utermuxadb ...\n"
+    curl -s -o "$script" https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/test/utermuxadb
+    chmod +x "$script"
+fi
+
+cache_path="/data/data/com.termux/cache/apt/archives/"
+mkdir -p "$cache_path" || { echo "Failed to create cache path: $cache_path"; exit 1; }
+
+arch=$(uname -m)
+
+url="https://raw.githubusercontent.com/nohajc/nohajc.github.io/master/dists/termux/extras/binary-$( [ "$arch" = "aarch64" ] && echo "aarch64" || echo "arm" )/Packages"
+
+echo -e "\nGet data ..."
+response=$(curl -s "$url") || { echo "Failed to get data"; exit 1; }
+
+filenames=$(echo "$response" | grep "Filename" | awk -F'/' '{print $NF}')
+
+latest_files=$(echo "$filenames" | awk -F'_' '
+{
+    split($2, version, "-");
+    package = $1;
+    version_number = version[1];
+    package_versions[package] = version_number "-" version[2];
+}
+END {
+    for (pkg in package_versions) {
+        print pkg "_" package_versions[pkg] "_aarch64.deb";
+    }
+}' | sort -t'_' -k2,2V -k3,3V)
+
+all_installed=true
+
+for file in $latest_files; do
+    if [ -e "$cache_path/$file" ]; then
+        echo -e "\nLatest version ${file%_*.deb} \nalready downloaded"
+        echo -e "re dpkg -i $file ...\n"
+        dpkg -i "$cache_path$file" > /dev/null || { echo "Failed to re dpkg $file"; all_installed=false; }
+        [ "$(echo "$file" | sed 's/-.*//')" = "termux" ] && \
+{ echo -e "re create symbolic links:\n - termux-fastboot -> fastboot\n - termux-adb -> adb\n"; \
+  ln -sf $PREFIX/bin/termux-fastboot $PREFIX/bin/fastboot && \
+  ln -sf $PREFIX/bin/termux-adb $PREFIX/bin/adb; }
+    else
+        echo -e "\nDownload ${file%_*.deb} ..."
+        response=$(curl -s -o "$cache_path$file" "${url%Packages}$file") || { echo "Failed to download ${file%_*.deb}"; all_installed=false; continue; }
+        echo -e "dpkg -i $file ...\n"
+        dpkg -i "$cache_path$file" > /dev/null || { echo "Failed to dpkg $file"; all_installed=false; }
+        [ "$(echo "$file" | sed 's/-.*//')" = "termux" ] && \
+{ echo -e "create symbolic links:\n - termux-fastboot -> fastboot\n - termux-adb -> adb\n"; \
+  ln -sf $PREFIX/bin/termux-fastboot $PREFIX/bin/fastboot && \
+  ln -sf $PREFIX/bin/termux-adb $PREFIX/bin/adb; }
+    fi
+done
+
+pattern=$( [ "$arch" = "aarch64" ] && echo "aarch64.deb" || echo "arm.deb" )
+
+declare -A urls=(
+    ["libusb"]="libu/libusb/"
+    ["brotli"]="b/brotli/"
+    ["abseil-cpp"]="a/abseil-cpp/"
+    ["termux-api"]="t/termux-api/"
+)
+
+for name in "${!urls[@]}"; do
+    url="https://packages.termux.dev/apt/termux-main/pool/main/${urls[$name]}"
+    
+    package=$(curl -s "$url" | grep -oP '(?<=href=")[^"]*' | grep "$pattern" | head -n 1)
+
+    if [ -n "$package" ]; then
+        if [ -f "${cache_path}${package}" ]; then
+            echo -e "\nLatest version ${package%_*.deb} \nalready downloaded"
+            echo "re dpkg -i $package ..."
+            dpkg -i "${cache_path}${package}" > /dev/null || { echo "Failed to re dpkg $package"; all_installed=false; }
+        else
+            echo -e "\nDownload ${package%_*.deb} ..."
+            curl -s -o "${cache_path}${package}" "${url}${package}" || { echo "Failed to download ${package%_*.deb}"; all_installed=false; }
+            echo "dpkg -i $package ..."
+            dpkg -i "${cache_path}${package}" > /dev/null || { echo "Failed to dpkg $package"; all_installed=false; }
+        fi
+    else
+        echo "No package found for $name matching $pattern"
+        all_installed=false
+    fi
+done
+
+if $all_installed; then
+    echo -e "\nr: Done\n"
+    [ ! -f ~/.bashrc ] && touch ~/.bashrc
+    grep -qxF 'pkg() {' ~/.bashrc || echo -e 'pkg() {\n    command pkg "$@"\n    [ "$1" = "upgrade" ] && $PREFIX/bin/utermuxadb\n}' >> ~/.bashrc
+    source ~/.bashrc
+    echo -e "\n\nany future upgrades will be done as part of: \npkg upgrade or utermuxadb\n"
+    echo -e "\n\e[1;32madb\e[0m and \e[1;32mfastboot\e[0m ready to use.\n\n"
+else
+    echo -e "\nr: Failed\n"
+fi
