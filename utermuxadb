@@ -4,7 +4,7 @@ script="$PREFIX/bin/utermuxadb"
 
 if [ ! -f "$script" ]; then
     echo -e "\nDownload utermuxadb ...\n"
-    curl -s -o "$script" https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/test/utermuxadb
+    curl -s -o "$script" https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/utermuxadb
     chmod +x "$script"
 fi
 
