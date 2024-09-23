@@ -14,7 +14,3 @@
 ```bash
 curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/install | bash
 ```
-Or
-```bash
-curl -s https://raw.githubusercontent.com/offici5l/termux-adb-fastboot/main/utermuxadb | bash
-```
